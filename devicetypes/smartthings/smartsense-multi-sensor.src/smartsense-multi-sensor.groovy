@@ -371,21 +371,67 @@ def getTemperature(value) {
 
 	def refresh() {
 		log.debug "Refreshing Values "
-		def refreshCmds = [
         
-        /* sensitivity - default value (8) */
+        def refreshCmds = []
         
-        "zcl mfg-code ${manufacturerCode}", "delay 200",
-        "zcl global write 0xFC02 0 0x20 {02}", "delay 200",
-        "send 0x${device.deviceNetworkId} 1 1", "delay 400",
+		if (device.getDataValue("manufacturer") == "SmartThings") {
+        	
+			log.debug "Refreshing Values for manufacturer: SmartThings "
+         	refreshCmds = [
 
-		"st rattr 0x${device.deviceNetworkId} 1 0x402 0", "delay 200",
-		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 200",
+	            /* These values of Motion Threshold Multiplier(01) and Motion Threshold (D200) 
+	               seem to be giving pretty accurate results for the XYZ co-ordinates for this manufacturer. 
+	               Separating these out in a separate if-else because I do not want to touch Centralite part 
+	               as of now. 
+	            */
 
-        "zcl mfg-code ${manufacturerCode}", "delay 200",
-        "zcl global read 0xFC02 0x0010",
-        "send 0x${device.deviceNetworkId} 1 1","delay 400"
-	]
+	            "zcl mfg-code ${manufacturerCode}", "delay 200",
+	            "zcl global write 0xFC02 0 0x20 {01}", "delay 200",
+	            "send 0x${device.deviceNetworkId} 1 1", "delay 400",
+	            
+	            "zcl mfg-code ${manufacturerCode}", "delay 200",
+	            "zcl global write 0xFC02 2 0x21 {D200}", "delay 200",
+	            "send 0x${device.deviceNetworkId} 1 1", "delay 400",
+
+	            "st rattr 0x${device.deviceNetworkId} 1 0x402 0", "delay 400",
+	            "st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 400",
+
+	            "zcl mfg-code ${manufacturerCode}", "delay 200",
+	            "zcl global read 0xFC02 0x0010",
+	            "send 0x${device.deviceNetworkId} 1 1","delay 400",
+
+	            "zcl mfg-code ${manufacturerCode}", "delay 200",
+	            "zcl global read 0xFC02 0x0012",
+	            "send 0x${device.deviceNetworkId} 1 1","delay 400",
+
+	            "zcl mfg-code ${manufacturerCode}", "delay 200",
+	            "zcl global read 0xFC02 0x0013",
+	            "send 0x${device.deviceNetworkId} 1 1","delay 400",
+
+	            "zcl mfg-code 0x110A", "delay 200",
+	            "zcl global read 0xFC02 0x0014",
+	            "send 0x${device.deviceNetworkId} 1 1", "delay 400"
+                
+            ]
+            
+        
+        } else {
+             refreshCmds = [
+
+                /* sensitivity - default value (8) */
+
+                "zcl mfg-code ${manufacturerCode}", "delay 200",
+                "zcl global write 0xFC02 0 0x20 {02}", "delay 200",
+                "send 0x${device.deviceNetworkId} 1 1", "delay 400",
+
+                "st rattr 0x${device.deviceNetworkId} 1 0x402 0", "delay 200",
+                "st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 200",
+
+                "zcl mfg-code ${manufacturerCode}", "delay 200",
+                "zcl global read 0xFC02 0x0010",
+                "send 0x${device.deviceNetworkId} 1 1","delay 400"
+            ]
+        }
 
 		return refreshCmds + enrollResponse()
 	}
@@ -552,4 +598,5 @@ private byte[] reverseArray(byte[] array) {
 	}
 	return array
 }
+
 
